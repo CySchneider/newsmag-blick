@@ -1,0 +1,35 @@
+# Holt die Blick-Feeds und schickt sie an newsmag.ch (Blick sperrt Cloudflare-Server, GitHub nicht).
+# Alle 30 min: im privaten Repo bleibt das unter den 2000 Gratis-Minuten pro Monat.
+name: Blick an Newsmag
+on:
+  schedule:
+    - cron: "11,41 * * * *"
+  workflow_dispatch: {}
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Feeds holen und senden
+        env:
+          PUSH_KEY: ${{ secrets.PUSH_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, urllib.request
+          FEEDS = ["https://www.blick.ch/rss.xml", "https://www.blick.ch/digital/rss.xml"]
+          UA = "Mozilla/5.0 (compatible; Newsmag/1.0; +https://newsmag.ch/so-entsteht-newsmag)"
+          out = []
+          for u in FEEDS:
+              try:
+                  r = urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": UA}), timeout=30)
+                  xml = r.read().decode("utf-8", "replace")
+                  print(u, r.status, len(xml), "Zeichen")
+                  out.append({"url": u, "xml": xml})
+              except Exception as e:
+                  print(u, "FEHLER", e)
+          if not out:
+              sys.exit("Kein Feed erreichbar")
+          req = urllib.request.Request("https://newsmag.ch/api/push?key=" + os.environ["PUSH_KEY"],
+              data=json.dumps({"feeds": out}).encode(), headers={"Content-Type": "application/json", "User-Agent": UA})
+          print(urllib.request.urlopen(req, timeout=30).read().decode())
+          PY
