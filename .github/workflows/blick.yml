@@ -1,5 +1,5 @@
 # Holt die Blick-Feeds und schickt sie an newsmag.ch (Blick sperrt Cloudflare-Server, GitHub nicht).
-# Alle 30 min: im privaten Repo bleibt das unter den 2000 Gratis-Minuten pro Monat.
+# Alle 30 min. Repo öffentlich (seit 27.10.2026): unbegrenzte Actions-Minuten; PUSH_KEY nur als Secret, nie ausgeben.
 name: Blick an Newsmag
 on:
   schedule:
